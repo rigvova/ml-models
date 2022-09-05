@@ -1,7 +1,7 @@
 import numpy as np
 
 class LogisticRegression():
-    def __init__(self, lr=0.01, tol=0.001):
+    def __init__(self, lr=0.01, tol=0.001, alpha=0.0, beta=0.0):
         self.w = None
         self.w0 = None
         self.n_samples = 0
@@ -9,6 +9,8 @@ class LogisticRegression():
         
         self.lr = lr
         self.tol = tol
+        self.alpha = alpha
+        self.beta = beta
 
 
     def __logloss(self, y_true, y_pred):
@@ -32,7 +34,7 @@ class LogisticRegression():
 
 
     def __logloss_gradient(self, X, y_true, y_pred):
-        dw  = -X.T @ (y_true-y_pred) / self.n_samples
+        dw  = -X.T @ (y_true-y_pred) / self.n_samples + self.alpha * 2 * self.w  + self.beta * np.sign(self.w)
         dw0 = -np.sum(y_true-y_pred) / self.n_samples
         return dw, dw0
 
