@@ -29,7 +29,7 @@ class LinearRegression():
 
     def __mse_gradient(self, X, y, y_pred):
         dw  = -X.T @ (y - y_pred) / (self.n_samples) + self.alpha * 2 * self.w  + self.beta * np.sign(self.w)
-        dw0 = -np.sum(y - y_pred) / (self.n_samples) + self.alpha * 2 * self.w0 + self.beta * np.sign(self.w0)
+        dw0 = -np.sum(y - y_pred) / (self.n_samples)
         return dw, dw0
 
 
