@@ -75,10 +75,10 @@ class RegressionNode():
 
         # Pick best feature for split
         for feature in range(self.n_features):
-            sorted_values = sorted(set(self.X[:, feature].ravel()))
+            sorted_values = self.__make_splits_array(self.X[:, feature].ravel())
             # Find best split value
-            for split in sorted_values[:-1]:
-                mask = (self.X[:,feature].ravel() <= split)
+            for split in sorted_values:
+                mask = (self.X[:,feature].ravel() < split)
                 yleft  = self.y[mask]
                 yright = self.y[~mask]
 
@@ -94,6 +94,16 @@ class RegressionNode():
                     best_mse     = split_mse
 
         return (best_feature, best_split)
+
+
+    @staticmethod
+    def __make_splits_array(arr: np.array) -> np.array:
+        """
+        Makes array of all possible splits for a numerical 1D-array.
+        Uses moving average window of size 2.
+        [1,2,3] -> [1.5, 2.5]
+        """
+        return np.convolve(sorted(set(arr)), np.ones(2)/2, mode='valid')
 
 
     def __mse(self, y_true, y_pred, n_samples):
