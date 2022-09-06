@@ -85,9 +85,8 @@ class RegressionNode():
                 yleft_mean  = np.mean(yleft)
                 yright_mean = np.mean(yright)
 
-                split_mse = np.sum((yleft-yleft_mean)**2) \
-                            + np.sum((yright-yright_mean)**2) \
-                            / self.n_samples
+                split_mse = (np.sum((yleft-yleft_mean)**2) + np.sum((yright-yright_mean)**2)) \
+                             / self.n_samples
 
                 if split_mse < best_mse:
                     best_feature = feature
