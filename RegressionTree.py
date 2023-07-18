@@ -1,6 +1,6 @@
 import numpy as np
 
-class RegressionTree():
+class RegressionTree:
     def __init__(
         self,
         max_depth=2,
@@ -32,7 +32,7 @@ class RegressionTree():
             arr=X)
 
 
-class RegressionNode():
+class RegressionNode:
     def __init__(
         self,
         X,
@@ -63,19 +63,19 @@ class RegressionNode():
 
         self.ymean = np.mean(y) # target mean (node prediction)
 
-        self.mse = self.__mse(self.y, self.ymean, self.n_samples) # prediction error
+        self.mse = self._mse(self.y, self.ymean, self.n_samples) # prediction error
 
         self.is_leaf = False # True if cur node is last node
 
     
-    def __calc_best_split(self):
+    def _calc_best_split(self):
         best_feature = None
         best_split = None
         best_mse = self.mse
 
         # Pick best feature for split
         for feature in range(self.n_features):
-            sorted_values = self.__make_splits_array(self.X[:, feature].ravel())
+            sorted_values = self._make_splits_array(self.X[:, feature].ravel())
             # Find best split value
             for split in sorted_values:
                 mask = (self.X[:,feature].ravel() < split)
@@ -97,7 +97,7 @@ class RegressionNode():
 
 
     @staticmethod
-    def __make_splits_array(arr: np.array) -> np.array:
+    def _make_splits_array(arr: np.array) -> np.array:
         """
         Makes array of all possible splits for a numerical 1D-array.
         Uses moving average window of size 2.
@@ -106,7 +106,7 @@ class RegressionNode():
         return np.convolve(sorted(set(arr)), np.ones(2)/2, mode='valid')
 
 
-    def __mse(self, y_true, y_pred, n_samples):
+    def _mse(self, y_true, y_pred, n_samples):
         return np.sum((y_true - y_pred)**2) / n_samples
 
 
@@ -122,7 +122,7 @@ class RegressionNode():
 
     def split(self):
         if (self.cur_depth < self.max_depth) and (self.n_samples >= self.min_leaf_size):
-            self.best_feature, self.best_split = self.__calc_best_split()
+            self.best_feature, self.best_split = self._calc_best_split()
 
             # Node is a leaf if no splits were found
             if self.best_split is None:
