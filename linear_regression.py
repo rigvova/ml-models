@@ -75,10 +75,10 @@ class LinearRegression:
         Returns:
             tuple: A tuple containing the gradients with respect to the weights and bias.
         """
-        dw = ((-X.T @ (y - y_pred)) / self.n_samples
+        dw = ((X.T @ (y_pred - y)) / self.n_samples
               + self.alpha * 2 * self.w
               + self.beta * np.sign(self.w))
-        dw0 = -np.sum(y - y_pred) / self.n_samples
+        dw0 = np.sum(y_pred - y) / self.n_samples
         return dw, dw0
 
     def _mse_loss(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
