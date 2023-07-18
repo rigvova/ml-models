@@ -43,18 +43,18 @@ class LogisticRegression:
         self.alpha = alpha
         self.beta = beta
 
-    def _logloss(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    def _logloss(self, y: np.ndarray, preds: np.ndarray) -> float:
         """
         Computes the log loss (also called logistic loss or cross-entropy loss) between the true and predicted values.
 
         Args:
-            y_true (numpy.ndarray): The true target values.
-            y_pred (numpy.ndarray): The predicted target values.
+            y (numpy.ndarray): The true target labels.
+            preds (numpy.ndarray): The predicted positive class probabilities.
 
         Returns:
             float: The log loss.
         """
-        return -np.sum(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred)) / self.n_samples
+        return -np.sum(y * np.log(preds) + (1 - y) * np.log(1 - preds)) / self.n_samples
 
     def _logloss_anti_grad_step(self, X: np.ndarray, y: np.ndarray) -> bool:
         """
@@ -70,35 +70,35 @@ class LogisticRegression:
                 is less than the tolerance).
         """
         stop_flag = False
-        y_pred = self._sigmoid(X @ self.w + self.w0)
-        dw, dw0 = self._logloss_gradient(X, y, y_pred)
-        next_dw = self.w - self.lr * dw
-        next_dw0 = self.w0 - self.lr * dw0
-
-        if self._logloss(y, y_pred) - self._logloss(y, self._sigmoid(X @ next_dw + next_dw0)) < self.tol:
+        y_probas = self._sigmoid(X @ self.w + self.w0)
+        dw, dw0 = self._logloss_gradient(X, y, y_probas)
+        next_w = self.w - self.lr * dw
+        next_w0 = self.w0 - self.lr * dw0
+        next_probas = self._sigmoid(X @ next_w + next_w0)
+        if self._logloss(y, y_probas) - self._logloss(y, next_probas) < self.tol:
             stop_flag = True
         else:
-            self.w = next_dw
-            self.w0 = next_dw0
+            self.w = next_w
+            self.w0 = next_w0
 
         return stop_flag
 
-    def _logloss_gradient(self, X: np.ndarray, y: np.ndarray, y_pred: np.ndarray) -> Tuple[np.ndarray, float]:
+    def _logloss_gradient(self, X: np.ndarray, y: np.ndarray, preds: np.ndarray) -> Tuple[np.ndarray, float]:
         """
         Computes the gradient of the log loss function with respect to the weights and bias.
 
         Args:
             X (numpy.ndarray): The input data.
-            y (numpy.ndarray): The target values.
-            y_pred (numpy.ndarray): The predicted target values.
+            y (numpy.ndarray): The true target labels.
+            preds (numpy.ndarray): The predicted positive class probabilities.
 
         Returns:
             tuple: A tuple containing the gradients with respect to the weights and bias.
         """
-        dw = ((-X.T @ (y - y_pred)) / self.n_samples
+        dw = ((X.T @ (preds - y)) / self.n_samples
               + self.alpha * 2 * self.w
               + self.beta * np.sign(self.w))
-        dw0 = -np.sum(y - y_pred) / self.n_samples
+        dw0 = np.sum(preds - y) / self.n_samples
         return dw, dw0
 
     def _set_initial_params(self, X: np.ndarray):
