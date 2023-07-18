@@ -54,7 +54,8 @@ class LinearRegression:
         dw, dw0 = self._mse_gradient(X, y, y_pred)
         next_w = self.w - self.lr * dw
         next_w0 = self.w0 - self.lr * dw0
-        if self._mse_loss(y, y_pred) > self._mse_loss(y, X @ next_w + next_w0):
+        next_pred = X @ next_w + next_w0
+        if self._mse_loss(y, y_pred) > self._mse_loss(y, next_pred):
             self.w = next_w
             self.w0 = next_w0
         else:
@@ -74,7 +75,9 @@ class LinearRegression:
         Returns:
             tuple: A tuple containing the gradients with respect to the weights and bias.
         """
-        dw = -X.T @ (y - y_pred) / self.n_samples + self.alpha * 2 * self.w + self.beta * np.sign(self.w)
+        dw = ((-X.T @ (y - y_pred)) / self.n_samples
+              + self.alpha * 2 * self.w
+              + self.beta * np.sign(self.w))
         dw0 = -np.sum(y - y_pred) / self.n_samples
         return dw, dw0
 
