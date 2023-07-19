@@ -114,7 +114,7 @@ class DecisionTreeRegressor:
         """Split a node and return the resulting left and right child nodes."""
         node = Node()
         node.n_samples = X.shape[0]
-        node.score = float(np.mean(y).round(0))
+        node.score = float(np.mean(y))
         node.mse = self._mse(y)
 
         if (depth == self.max_depth) or (node.n_samples < self.min_samples_split):
