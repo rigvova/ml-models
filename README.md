@@ -1,13 +1,14 @@
 # Machine Learning Models
 
 This repository contains classical machine learning models implemented in Python, including Linear Regression,
-Logistic Regression, and a Regression Tree. The models are designed to be simple, easy-to-understand, and effective.
+Logistic Regression, and Decision Trees. The models are designed to be simple, easy-to-understand, and effective.
 
 ## Repository Structure
 The repository consists of the following python scripts:
 
 * `linear_regression.py`
 * `logistic_regression.py`
+* `tree_regressor.py`
 
 ## Usage
 To use the LinearRegression class, create an instance of the class, then use the fit method to train on your data. 
