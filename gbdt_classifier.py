@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Tuple, Callable
 
 import numpy as np
+from scipy.special import expit
 
 from tree_regressor import DecisionTreeRegressor
 
@@ -35,6 +36,12 @@ class GradientBoostingClassifier:
         self.trees_ = None
 
     @staticmethod
+    def log_odds(y: np.ndarray) -> float:
+        """Computes log of the odds for the given target."""
+        pos = y.sum()
+        return float(np.log(pos / (len(y) - pos)))
+
+    @staticmethod
     def _logloss(y_true: np.ndarray, y_pred: np.ndarray or float) -> Tuple[float, np.ndarray]:
         """
         Compute the logloss and gradient for a given set of target labels
@@ -45,7 +52,23 @@ class GradientBoostingClassifier:
         grad = y_pred - y_true
         return loss, grad
 
-    def _subsample(self, X, y):
+    @staticmethod
+    def _sigmoid(logits: np.ndarray) -> np.ndarray:
+        """
+        Applies the sigmoid function to the input logits.
+
+        The sigmoid function is defined as sigmoid(x) = 1 / (1 + exp(-x)),
+        and it maps any input to a value in the range (0, 1).
+
+        Args:
+            logits (numpy.ndarray): The input logits.
+
+        Returns:
+            numpy.ndarray: The output after applying the sigmoid function.
+        """
+        return expit(logits)
+
+    def _subsample(self, X, y, probas):
         """Performs sampling for SGD."""
         n_samples = len(y)
 
@@ -55,9 +78,7 @@ class GradientBoostingClassifier:
             replace=self.replace
         )
 
-        sub_X, sub_y = X[idx], y[idx]
-
-        return sub_X, sub_y
+        return X[idx], y[idx], probas[idx]
 
     def fit(self, X, y) -> GradientBoostingClassifier:
         """
@@ -70,13 +91,15 @@ class GradientBoostingClassifier:
         Returns:
             GradientBoostingClassifier: The fitted model.
         """
-        self.base_pred_ = np.mean(y)  # positive class proba
+        # use log of the odds as the base proba prediction
+        self.base_pred_ = np.ones_like(y) * self.log_odds(y)
         self.trees_ = []
+        probas = self._sigmoid(self.base_pred_)
 
         # Iteratively train trees on anti gradients
         # of previous predictions
         n_trees = 0
-        _, grad = self.loss(y, self.base_pred_)
+        _, grad = self.loss(y, probas)
         while n_trees < self.n_estimators:
 
             # Fit a new tree on anti grad of the previous prediction error
@@ -84,15 +107,18 @@ class GradientBoostingClassifier:
                 max_depth=self.max_depth,
                 min_samples_split=self.min_samples_split
             )
-            new_tree.fit(*self._subsample(X, -grad))
+            X_sub, antigrad_sub, probas_sub = self._subsample(X, -grad, probas)
+            new_tree.fit(X_sub, antigrad_sub, probas=probas_sub)
 
             # Add the tree to the list
             self.trees_.append(new_tree)
             n_trees += 1
 
             # Update the gradient
-            pred = self.predict(X)
-            _, grad = self.loss(y, pred)
+            logits = self.predict(X)
+            probas = self._sigmoid(logits)
+
+            _, grad = self.loss(y, probas)
 
         return self
 
@@ -119,8 +145,8 @@ class GradientBoostingClassifier:
         Returns:
             np.ndarray: The model prediction, array  of shape (n_samples,),
         """
-        pred = np.ones((X.shape[0])) * self.base_pred_
+        logits = np.ones(shape=X.shape[0]) * self.base_pred_[0]
         for tree in self.trees_:
-            pred += tree.predict(X) * self.learning_rate
+            logits += tree.predict(X) * self.learning_rate
 
-        return pred
+        return self._sigmoid(logits)

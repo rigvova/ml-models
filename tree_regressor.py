@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Optional
 from dataclasses import dataclass
 
 import numpy as np
@@ -33,23 +34,26 @@ class DecisionTreeRegressor:
         """
         self.n_features_: int or None = None
         self.tree_: Node or None = None  # tree root
+        self.probas: np.ndarray or None = None  # used for classification to derive logits
 
         self.max_depth: int = max_depth
         self.min_samples_split: int = min_samples_split
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> DecisionTreeRegressor:
+    def fit(self, X: np.ndarray, y: np.ndarray, probas: Optional[np.ndarray] = None) -> DecisionTreeRegressor:
         """
         Build a decision tree regressor from the training set (X, y).
 
         Args:
             X (np.ndarray): The input samples with shape (n_samples, n_features).
             y (np.ndarray): The target values with shape (n_samples,).
+            probas (optional, np.ndarray): The target values with shape (n_samples,).
+                May be used by GBDT for classification problems.
 
         Returns:
             DecisionTreeRegressor: The fitted decision tree regressor object.
         """
         self.n_features_ = X.shape[1]
-        self.tree_ = self._split_node(X, y)
+        self.tree_ = self._split_node(X, y, probas=probas)
         return self
 
     @staticmethod
@@ -110,11 +114,15 @@ class DecisionTreeRegressor:
 
         return best_feature, best_threshold
 
-    def _split_node(self, X: np.ndarray, y: np.ndarray, depth: int = 0) -> Node:
+    def _split_node(self, X: np.ndarray, y: np.ndarray, depth: int = 0,
+                    probas: Optional[np.ndarray] = None) -> Node:
         """Split a node and return the resulting left and right child nodes."""
         node = Node()
         node.n_samples = X.shape[0]
-        node.score = float(np.mean(y))
+        if probas is None:
+            node.score = float(np.mean(y))
+        else:
+            node.score = np.sum(y) / np.sum(probas / (1-probas))  # new logit
         node.mse = self._mse(y)
 
         if (depth == self.max_depth) or (node.n_samples < self.min_samples_split):
@@ -124,8 +132,12 @@ class DecisionTreeRegressor:
             node.feature, node.threshold = self._best_split(X, y)
             idx_left = (X[:, node.feature] <= node.threshold)
             idx_right = (X[:, node.feature] > node.threshold)
-            node.left = self._split_node(X[idx_left], y[idx_left], depth=depth+1)
-            node.right = self._split_node(X[idx_right], y[idx_right], depth=depth+1)
+            if probas is None:
+                node.left = self._split_node(X[idx_left], y[idx_left], depth=depth+1)
+                node.right = self._split_node(X[idx_right], y[idx_right], depth=depth+1)
+            else:
+                node.left = self._split_node(X[idx_left], y[idx_left], probas=probas[idx_left], depth=depth+1)
+                node.right = self._split_node(X[idx_right], y[idx_right], probas=probas[idx_right], depth=depth+1)
 
         return node
 
