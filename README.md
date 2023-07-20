@@ -10,6 +10,8 @@ The repository consists of the following python scripts:
 * `logistic_regression.py`
 * `tree_regressor.py`
 * `tree_classifier.py`
+* `gbdt_regressor.py`
+* `gbdt_classifier.py`
 
 ## Usage
 To use the LinearRegression class, create an instance of the class, then use the fit method to train on your data. 
