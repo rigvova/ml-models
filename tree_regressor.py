@@ -122,7 +122,8 @@ class DecisionTreeRegressor:
         if probas is None:
             node.score = float(np.mean(y))
         else:
-            node.score = np.sum(y) / np.sum(probas / (1-probas))  # new logit
+            # calculate XGBoost-style logits
+            node.score = float(np.sum(y) / np.sum(probas / (1-probas)))
         node.mse = self._mse(y)
 
         if (depth == self.max_depth) or (node.n_samples < self.min_samples_split):
