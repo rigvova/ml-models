@@ -12,7 +12,7 @@ class Node:
     feature: int = None  # node split feature
     threshold: float = None  # node feature split threshold
     score: float = None  # node (leaf) prediction (target probas)
-    logloss: float = None  # logloss when `score` is predicted
+    entropy: float = None  # entropy when `score` is predicted
     left: Node = None
     right: Node = None
 
@@ -53,32 +53,32 @@ class DecisionTreeClassifier:
         return self
 
     @staticmethod
-    def _logloss(y: np.ndarray) -> float:
-        """Compute the logloss for a given set of target values, assuming the model predicts target mean"""
-        probas = np.mean(y)
+    def _entropy(y: np.ndarray) -> float:
+        """Compute the entropy for a given set of target values, assuming the model predicts target mean"""
+        p = np.mean(y)
         a = 0.001
-        return -float(np.mean(y * np.log(probas + a) + (1 - y) * np.log(1 - probas + a)))
+        return -float(np.mean(p * np.log(p + a) + (1 - p) * np.log(1 - p + a)))
 
-    def _weighted_logloss(self, y_left: np.ndarray, y_right: np.ndarray) -> float:
+    def _weighted_entropy(self, y_left: np.ndarray, y_right: np.ndarray) -> float:
         """
-        Computes the weighted logloss criterion for two given sets of target values.
-        The weighted logloss is computed as the sum of the logloss of the left set multiplied by its length and
-        the logloss of the right set multiplied by its length.
+        Computes the weighted entropy criterion for two given sets of target values.
+        The weighted entropy is computed as the sum of the entropy of the left set multiplied by its length and
+        the entropy of the right set multiplied by its length.
 
         Args:
             y_left (np.ndarray): The target values of the left set, array of shape (n_samples_left,).
             y_right (np.ndarray): The target values of the right set, array of shape (n_samples_right,).
 
         Returns:
-            float: The weighted logloss of the two sets. Returns NaN if the right set is empty.
+            float: The weighted entropy of the two sets. Returns NaN if the right set is empty.
         """
         left_arr_n = len(y_left)
         right_arr_n = len(y_right)
         if right_arr_n == 0:
             return np.nan
-        return left_arr_n * self._logloss(y_left) + right_arr_n * self._logloss(y_right)
+        return left_arr_n * self._entropy(y_left) + right_arr_n * self._entropy(y_right)
         # Could use normalized version instead:
-        # return ((left_arr_n * self._logloss(y_left) + right_arr_n * self._logloss(y_right))
+        # return ((left_arr_n * self._entropy(y_left) + right_arr_n * self._entropy(y_right))
         #         / (left_arr_n + right_arr_n))
 
     def _best_feature_split(self, x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
@@ -90,7 +90,7 @@ class DecisionTreeClassifier:
         for thresh in unq:
             y_left = y[x <= thresh]
             y_right = y[x > thresh]
-            wloss = self._weighted_logloss(y_left, y_right)
+            wloss = self._weighted_entropy(y_left, y_right)
             if wloss < best_wloss:
                 best_wloss = wloss
                 best_threshold = thresh
@@ -117,7 +117,7 @@ class DecisionTreeClassifier:
         node = Node()
         node.n_samples = X.shape[0]
         node.score = float(np.mean(y))
-        node.logloss = self._logloss(y)
+        node.entropy = self._entropy(y)
 
         if (depth == self.max_depth) or (node.n_samples < self.min_samples_split):
             node.left = None
